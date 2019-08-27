@@ -2,7 +2,7 @@
 const { Deepstream } = require('@deepstream/server')
 const deepstream = require('@deepstream/client')
 
-const server = new Deepstream()
+const server = new Deepstream({})
 
 // let db = '<p>initial text</p>'
 

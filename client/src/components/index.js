@@ -18,14 +18,15 @@ Quill.register('modules/cursors', QuillCursors)
 class Root extends Component {
   state = {
     loading: true,
+    text: undefined,
   }
 
-  client = deepstream('192.168.1.53:6020')
+  client = deepstream('localhost:6020')
   username = nanoid()
   color = randomcolor()
   dom = {}
 
-  text = this.client.record.getRecord('test/randomid')
+
 
   onConnected = () => {
     this.client.on('connectionStateChanged', console.log)
@@ -34,10 +35,11 @@ class Root extends Component {
   login = cb => {
     this.client.login({ username: this.username }, async (success) => {
       if (!success) return
-      const record = await this.text.whenReady()
-      console.log(record)
+      this.text = this.client.record.getRecord('test/randomid')
+      const { record } = await this.text.whenReady()
       this.setState({ loading: false }, () => {
         cb && cb()
+
       })
     })
   }
@@ -79,12 +81,17 @@ class Root extends Component {
   }
 
   initQuill = () => {
+    this.refs.editor.innerHTML = this.text.record.data['test/randomid']
+
     this.quill = new Quill('#editor', {
       theme: 'snow',
       modules: {
         cursors: true,
       }
     })
+
+    console.log(this.refs.editor)
+
 
     this.cursor = this.quill.getModule('cursors')
 
@@ -145,7 +152,7 @@ class Root extends Component {
 
     return (
       <div ref='container' className='fit-parent' style={{ position: 'relative' }} onMouseMove={this.onMouseMove}>
-        <div refs='editor' id='editor'></div>
+        <div ref='editor' id='editor'></div>
       </div>
     )
   }
