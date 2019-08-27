@@ -25,14 +25,14 @@ class Root extends Component {
   color = randomcolor()
   dom = {}
 
-  text = this.client.record.getRecord('wow')
+  text = this.client.record.getRecord('test/randomid')
 
   onConnected = () => {
     this.client.on('connectionStateChanged', console.log)
   }
 
   login = cb => {
-    this.client.login({ username: this.username }, async (success, data) => {
+    this.client.login({ username: this.username }, async (success) => {
       if (!success) return
       const record = await this.text.whenReady()
       console.log(record)
@@ -105,7 +105,7 @@ class Root extends Component {
       }
       // console.log(1)
 
-      this.text.set('wow', this.quill.root.innerHTML)
+      this.text.set('test/randomid', this.quill.root.innerHTML)
     })
   }
 
