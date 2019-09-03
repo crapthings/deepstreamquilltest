@@ -1,28 +1,28 @@
-// const QuillDeltaToHtmlConverter = require('quill-delta-to-html').QuillDeltaToHtmlConverter
+const WebSocket = require('ws')
+const http = require('http')
+const StaticServer = require('node-static').Server
+const setupWSConnection = require('y-websocket/bin/utils.js').setupWSConnection
+
 const { Deepstream } = require('@deepstream/server')
-const deepstream = require('@deepstream/client')
 
-const server = new Deepstream({})
+const production = process.env.PRODUCTION != null
+const port = process.env.PORT || 8888
 
-// let db = '<p>initial text</p>'
+const staticServer = new StaticServer('./dist', { cache: production ? 3600 : false, gzip: production })
 
-server.start()
+const server = http.createServer((request, response) => {
+  request.addListener('end', () => {
+    staticServer.serve(request, response)
+  }).resume()
+})
 
-// const client = deepstream('localhost:6020')
-// client.login({ username: 'server' })
-//
-// client.event.subscribe('test', payload => {
-//   for (const username in payload) {
-//     const p = payload[username]
-//     if (p.type === 'text-change') {
-//       const test = p.oldContents.ops.concat(p.delta.ops)
-//       const converter = new QuillDeltaToHtmlConverter(test)
-//       db = converter.convert()
-//     }
-//   }
-//   // jsonlog(payload)
-// })
-//
-// function jsonlog(log) {
-//   console.log(JSON.stringify(log, null, 2))
-// }
+const wss = new WebSocket.Server({ server })
+
+wss.on('connection', setupWSConnection)
+
+server.listen(port)
+
+console.log(`Listening to http://localhost:${port} ${production ? '(production)' : ''}`)
+
+const deepstreamServer = new Deepstream({})
+deepstreamServer.start()

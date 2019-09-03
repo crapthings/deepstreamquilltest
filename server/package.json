@@ -11,7 +11,12 @@
   "license": "ISC",
   "dependencies": {
     "@deepstream/client": "^4.0.4",
-    "@deepstream/server": "^4.0.6",
-    "quill-delta-to-html": "^0.10.13"
+    "@deepstream/server": "^4.1.0",
+    "deepstream.io-storage-mongodb": "^1.1.1",
+    "node-static": "^0.7.11",
+    "quill-delta-to-html": "^0.10.13",
+    "ws": "^7.1.2",
+    "y-websocket": "^1.0.0-6",
+    "yjs": "^13.0.0-96"
   }
 }
