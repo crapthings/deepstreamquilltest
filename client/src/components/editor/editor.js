@@ -17,6 +17,8 @@ import QuillCursors from 'quill-cursors'
 
 Quill.register('modules/cursors', QuillCursors)
 
+import FlexRTC from '../../utils/flexrtc'
+
 const VIDEO_CONFIG = { video: {
   width: 320,
   height: 240,
@@ -35,6 +37,11 @@ export default class Editor extends Component {
   componentDidMount() {
     this.initDeepstream()
     this.initEditor()
+
+    this.flexrtc = new FlexRTC({
+      url: 'wss://192.168.50.141:8666',
+      iceServers: [{ urls: 'stun:152.136.233.130:3478', username: 'gta', credential: 'atg' }],
+    })
   }
 
   componentWillUnmount() {
@@ -44,9 +51,7 @@ export default class Editor extends Component {
   render() {
     return (
       <>
-        <div ref='users'>
-          <video src=""></video>
-        </div>
+        <div id='video-wrapper'></div>
         <div ref='container' className='fit-parent' style={{ position: 'relative' }} onMouseMove={this.onMouseMove}>
           <div ref='editor'></div>
         </div>
@@ -55,10 +60,10 @@ export default class Editor extends Component {
   }
 
   initDeepstream = () => {
-    this.client = deepstream('wss://10.0.0.101:8666')
+    this.client = deepstream('wss://192.168.50.141:8666')
     this.client.login({ username: this.username }, () => {
       this.checkPresence()
-      this.initVideo()
+      // this.initVideo()
     })
     this.client.event.subscribe('test', payload => {
       for (const username in payload) {
@@ -73,7 +78,7 @@ export default class Editor extends Component {
 
   initEditor = () => {
     const ydoc = new Y.Doc()
-    const provider = new WebsocketProvider('wss://10.0.0.101:8888', 'quill', ydoc)
+    const provider = new WebsocketProvider('wss://192.168.50.141:8888', 'quill', ydoc)
     const type = ydoc.getText('quill')
     const editor = new Quill(this.refs.editor, {
       theme: 'snow',
