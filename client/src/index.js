@@ -1,3 +1,5 @@
 React = require('react')
 Component = React.Component
-require('./components')
+Link = require('react-router-dom').Link
+
+require('./routes')

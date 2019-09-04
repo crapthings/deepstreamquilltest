@@ -1,0 +1,2 @@
+sslCert: '../server.cert'
+sslKey: '../server.key'

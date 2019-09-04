@@ -79,16 +79,16 @@ class Root extends Component {
 
     const binding = new QuillBinding(type, editor, provider.awareness)
 
-//     this.cursor = editor.getModule('cursors')
-//
-//     this.cursor.createCursor(this.username, this.username, this.color)
-//
-//     editor.on('selection-change', range => {
-//       const type = 'selection-change'
-//       const color = this.color
-//       const payload = { [this.username]: { type, range, color } }
-//       this.client.event.emit('test', payload)
-//     })
+    this.cursor = editor.getModule('cursors')
+
+    this.cursor.createCursor(this.username, this.username, this.color)
+
+    editor.on('selection-change', range => {
+      const type = 'selection-change'
+      const color = this.color
+      const payload = { [this.username]: { type, range, color } }
+      this.client.event.emit('test', payload)
+    })
 
     provider.awareness.setLocalStateField('user', {
       name: this.username,
