@@ -13,18 +13,15 @@ export default class FlexRTC {
     await this.connection.login()
     this.currentPeer = this.connection.getUid()
     window.peers = this.peers = this.connection.record.getList('peers')
-    await this.peers.whenReady()
-    this.peers.addEntry(this.currentPeer)
     this.SubscribeRecord()
     this.SubscribeEvent()
+    await this.peers.whenReady()
+    this.peers.addEntry(this.currentPeer)
   }
 
   SubscribeEvent = () => this.connection.event.subscribe(`rtc-signal/${this.currentPeer}`, this.onSignal)
 
-  onSignal = ({ peer, signal }) => {
-    console.log(peer, signal)
-    this.connections[peer] && this.connections[peer].processSignal(signal)
-  }
+  onSignal = ({ peer, signal }) => this.connections[peer] && this.connections[peer].processSignal(signal)
 
   SubscribeRecord = () => this.peers.subscribe(this.onPeers)
 
@@ -62,7 +59,7 @@ class Peer {
     this.videoWrapper.appendChild(this.video)
 
     if (this.videoWrapper)
-      navigator.getUserMedia({ video: true, audio: true }, this.getUserMedia, () => {})
+      navigator.getUserMedia(this.options.quality || { video: true, audio: true }, this.getUserMedia, () => {})
 
     if (!this.videoWrapper)
       this.connect()
@@ -92,10 +89,7 @@ class Peer {
 
   getUserMedia = stream => this.connect({ stream })
 
-  processSignal = signal => {
-    console.log(signal)
-    this._p2pConnection.signal(signal)
-  }
+  processSignal = signal => this._p2pConnection.signal(signal)
 
   send = msg => this._p2pConnection.send(msg)
 

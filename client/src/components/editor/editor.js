@@ -39,8 +39,9 @@ export default class Editor extends Component {
     this.initEditor()
 
     this.flexrtc = new FlexRTC({
-      url: 'wss://192.168.50.141:8666',
+      url: 'wss://10.0.0.101:8666',
       iceServers: [{ urls: 'stun:152.136.233.130:3478', username: 'gta', credential: 'atg' }],
+      quality: VIDEO_CONFIG,
     })
   }
 
@@ -60,7 +61,7 @@ export default class Editor extends Component {
   }
 
   initDeepstream = () => {
-    this.client = deepstream('wss://192.168.50.141:8666')
+    this.client = deepstream('wss://10.0.0.101:8666')
     this.client.login({ username: this.username }, () => {
       this.checkPresence()
       // this.initVideo()
@@ -78,7 +79,7 @@ export default class Editor extends Component {
 
   initEditor = () => {
     const ydoc = new Y.Doc()
-    const provider = new WebsocketProvider('wss://192.168.50.141:8888', 'quill', ydoc)
+    const provider = new WebsocketProvider('wss://10.0.0.101:8888', 'quill', ydoc)
     const type = ydoc.getText('quill')
     const editor = new Quill(this.refs.editor, {
       theme: 'snow',
