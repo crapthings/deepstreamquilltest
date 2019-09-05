@@ -1,47 +1,72 @@
 import deepstream from '@deepstream/client'
 import SimplePeer from 'simple-peer'
 
-export default class FlexRTC {
+export default class MeshMedia {
   constructor(options) {
+    if (!options.url) throw new Error('deepstream server url required')
     this.options = options
+    this.connections = {}
     this.init()
   }
 
   init = async () => {
-    this.connections = {}
-    this.connection = deepstream(this.options.url)
-    await this.connection.login()
-    this.currentPeer = this.connection.getUid()
-    window.peers = this.peers = this.connection.record.getList('peers')
-    this.SubscribeRecord()
-    this.SubscribeEvent()
-    await this.peers.whenReady()
-    this.peers.addEntry(this.currentPeer)
+    await this.login()
+    await this.SubscribePeers()
+    this.SubscribeSignal()
   }
 
-  SubscribeEvent = () => this.connection.event.subscribe(`rtc-signal/${this.currentPeer}`, this.onSignal)
+  login = async () => {
+    this.connection = new deepstream(this.options.url)
+    this.currentPeer = this.connection.getUid()
+    await this.connection.login({ username: this.currentPeer })
+  }
 
-  onSignal = ({ peer, signal }) => this.connections[peer] && this.connections[peer].processSignal(signal)
+  SubscribePeers = async () => {
+    this.peers = this.connection.record.getList('peers')
 
-  SubscribeRecord = () => this.peers.subscribe(this.onPeers)
-
-  onPeers = _peers => {
-    const { options, connections, connection, currentPeer, peers } = this
-
-    _peers.forEach(peer => {
-      if (this.connections[peer]) return
-      if (this.currentPeer === peer) return
-      this.connections[peer] = new Peer({ options, connections, connection, currentPeer, peers, peer })
+    this.peers.on('entry-added', () => {
+      const peers = this.peers.getEntries()
+      console.log('added', peers)
     })
 
-    for (let peer in connections) {
+    await this.peers.whenReady()
+
+    this.peers.addEntry(this.currentPeer)
+//     this.peers.addEntry('test')
+//
+//     this.peers.subscribe(this.onPeers, false)
+//     // await this.peers.whenReady()
+//     this.peers.addEntry(this.currentPeer)
+    // this.connection.presence.subscribe(this.onPeerOnline)
+  }
+
+  SubscribeSignal = () => {
+    this.connection.event.subscribe(`signal/${this.currentPeer}`, this.onSignal, true)
+  }
+
+  onPeers = async _peers => {
+    const { options, connections, connection, currentPeer, peers } = this
+
+    for (const peer in connections) {
       if (_peers.indexOf(peer) === -1) connections[peer].destroy()
     }
+
+    for (const peer of _peers) {
+      // if (connections[peer]) continue
+      // if (currentPeer === peer) continue
+      connections[peer] = new Peer({ options, connections, connection, currentPeer, peers, peer })
+    }
+  }
+
+  onSignal = ({ peer, signal }) => {
+    if (!this.connections[peer]) return
+    this.connections[peer].processSignal(signal)
   }
 }
 
 class Peer {
   constructor({ options, connections, connection, currentPeer, peers, peer }) {
+    const { quality } = options || { video: true, audio: true }
     this.options = options
     this.connections = connections
     this.connection = connection
@@ -49,20 +74,22 @@ class Peer {
     this.peers = peers
     this.peer = peer
 
-    this._isConnected = false
+    // this._isConnected = false
 
-    this.videoWrapper = document.getElementById('video-wrapper')
+    this.videoWrapper = document.querySelector('#video-wrapper')
     this.video = document.createElement('video')
     this.video.id = peer
     this.video.width = 320
     this.video.height = 240
     this.videoWrapper.appendChild(this.video)
 
-    if (this.videoWrapper)
-      navigator.getUserMedia(this.options.quality || { video: true, audio: true }, this.getUserMedia, () => {})
+    if (this.videoWrapper) {
+      navigator.getUserMedia(quality, this.getUserMedia, () => {})
+    }
 
-    if (!this.videoWrapper)
+    if (!this.videoWrapper) {
       this.connect()
+    }
   }
 
   connect = ({ stream }) => {
@@ -71,11 +98,12 @@ class Peer {
     const options = {
       config: { iceServers },
       initiator: currentPeer > peer,
-      trickle: false,
+      trickle: true,
     }
 
-    if (stream)
+    if (stream) {
       options.stream = stream
+    }
 
     this._p2pConnection = new SimplePeer(options)
     this._p2pConnection.on('error', this.onError)
@@ -84,54 +112,67 @@ class Peer {
     this._p2pConnection.on('data', this.onData)
     this._p2pConnection.on('stream', this.onStream)
     this._p2pConnection.on('close', this.onClose)
-    setTimeout(this._checkConnected, 50000)
+    setTimeout(this._checkConnected, 5000)
   }
 
-  getUserMedia = stream => this.connect({ stream })
+  getUserMedia = stream => {
+    this.connect({ stream })
+  }
 
-  processSignal = signal => this._p2pConnection.signal(signal)
+  processSignal = signal => {
+    this._p2pConnection.signal(signal)
+  }
 
-  send = msg => this._p2pConnection.send(msg)
+  send = msg => {
+    this._p2pConnection.send(msg)
+  }
 
-  destroy = () => this._p2pConnection.destroy()
+  destroy = () => {
+    this._p2pConnection.destroy()
+  }
 
-  onError = error => console.log('on error', error)
+  onError = error => {
+    console.log('on error', error)
+  }
 
   onConnect = () => {
-    this._isConnected = true
+    // this._isConnected = true
     console.log('on connect' + this.peer)
   }
 
   onSignal = signal => {
-    this.connection.event.emit(`rtc-signal/${this.peer}`, {
+    this.connection.event.emit(`signal/${this.peer}`, {
       peer: this.currentPeer,
       signal,
     })
   }
 
-  onData = data => console.log('on data', data)
+  onData = data => {
+    console.log('on data', data)
+  }
 
   onStream = stream => {
     this.video.srcObject = stream
     this.video.play()
   }
 
-  onClose = () => {
+  onClose = (...args) => {
     console.log('on close', this.peer)
-    delete this.connections[this.peer]
-    this.peers.removeEntry(this.peer)
-    this.videoWrapper.removeChild(this.video)
 
     if (this._p2pConnection) {
-      if (this._p2pConnection.stream) {
-        this._p2pConnection.stream.getTracks().forEach(track => track.stop())
-      }
+      this._p2pConnection.destroy()
+    }
+
+    delete this.connections[this.peer]
+    this.peers.removeEntry(this.peer)
+    if (this.videoWrapper.contains(this.video)) {
+      this.videoWrapper.removeChild(this.video)
     }
   }
 
-  _checkConnected = () => {
-    if (!this._isConnected) {
-      this.destroy()
-    }
-  }
+  // _checkConnected = () => {
+  //   if (!this._isConnected) {
+  //     this.destroy()
+  //   }
+  // }
 }

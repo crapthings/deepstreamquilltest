@@ -34,25 +34,28 @@ export default class Editor extends Component {
   username = faker.name.findName()
   color = randomcolor()
 
-  componentDidMount() {
-    this.initDeepstream()
+  async componentDidMount() {
+    await this.initDeepstream()
     this.initEditor()
 
     this.flexrtc = new FlexRTC({
+      ds: this.client,
       url: 'wss://10.0.0.101:8666',
       iceServers: [{ urls: 'stun:152.136.233.130:3478', username: 'gta', credential: 'atg' }],
       quality: VIDEO_CONFIG,
+      container: '#video-wrapper',
     })
   }
 
   componentWillUnmount() {
     this.client.close()
+    // this.flexrtc.connection.close()
   }
 
   render() {
     return (
       <>
-        <div id='video-wrapper'></div>
+        <div ref='video' id='video-wrapper'></div>
         <div ref='container' className='fit-parent' style={{ position: 'relative' }} onMouseMove={this.onMouseMove}>
           <div ref='editor'></div>
         </div>
@@ -60,12 +63,10 @@ export default class Editor extends Component {
     )
   }
 
-  initDeepstream = () => {
+  initDeepstream = async () => {
     this.client = deepstream('wss://10.0.0.101:8666')
-    this.client.login({ username: this.username }, () => {
-      this.checkPresence()
-      // this.initVideo()
-    })
+    await this.client.login({ username: this.username })
+    this.checkPresence()
     this.client.event.subscribe('test', payload => {
       for (const username in payload) {
         if (username === this.username) continue
