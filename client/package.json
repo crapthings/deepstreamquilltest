@@ -23,7 +23,7 @@
     "@deepstream/client": "^4.0.5",
     "automerge": "^0.12.1",
     "faker": "^4.1.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "nanoid": "^2.0.4",
     "quill": "^1.3.6",
     "quill-cursors": "^2.1.1",
