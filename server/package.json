@@ -15,7 +15,7 @@
     "deepstream.io-storage-mongodb": "^1.1.1",
     "node-static": "^0.7.11",
     "quill-delta-to-html": "^0.10.13",
-    "ws": "^7.1.2",
+    "ws": "^7.4.6",
     "y-websocket": "^1.0.0-6",
     "yjs": "^13.0.0-96"
   }
